@@ -3,7 +3,7 @@ import { Outlet } from "react-router";
 
 export function MainLayout() {
   return (
-    <div className="flex max-h-screen flex-col">
+    <div className="flex h-screen flex-col">
       <header />
       <div className="flex flex-1 flex-col overflow-auto">
         <main className="flex flex-1 flex-col justify-center items-center">

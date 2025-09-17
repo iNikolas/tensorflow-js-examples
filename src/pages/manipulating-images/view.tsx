@@ -1,21 +1,7 @@
 import React from "react";
 import * as tf from "@tensorflow/tfjs";
 
-function useObjectUrl(file: File | null) {
-  const [imageUrl, setImageUrl] = React.useState("");
-
-  React.useEffect(() => {
-    setImageUrl((prev) => {
-      if (prev) {
-        URL.revokeObjectURL(prev);
-      }
-
-      return file ? URL.createObjectURL(file) : "";
-    });
-  }, [file]);
-
-  return imageUrl;
-}
+import { useObjectUrl } from "@/utils/hooks";
 
 export default function Page() {
   const [loadedImage, setLoadedImage] = React.useState<File | null>(null);
@@ -239,15 +225,6 @@ export default function Page() {
       });
     };
   }, [loadedImageUrl]);
-
-  React.useEffect(() => {
-    console.log(tf.memory().numTensors);
-  }, [
-    loadedImageUrl,
-    flippedImageUrl,
-    nnResizedImageUrl,
-    bilinearResizedImageUrl,
-  ]);
 
   return (
     <section className="max-w-6xl mx-auto flex flex-col justify-center items-center gap-2 w-full p-2">
