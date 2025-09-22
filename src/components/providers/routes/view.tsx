@@ -13,11 +13,13 @@ const SortingChaosChallengePage = React.lazy(
 
 const InceptionV3Page = React.lazy(() => import("@/pages/inception-v3"));
 
+const HomePage = React.lazy(() => import("@/pages/home"));
+
 export function RoutesProvider({ ...props }: RoutesProps) {
   return (
     <Routes {...props}>
       <Route element={<MainLayout />}>
-        <Route index element={<Navigate to="inception-v3" />} />
+        <Route index element={<Navigate to="home" />} />
         <Route
           path="manipulating-images"
           element={<ManipulatingImagesPage />}
@@ -27,6 +29,7 @@ export function RoutesProvider({ ...props }: RoutesProps) {
           element={<SortingChaosChallengePage />}
         />
         <Route path="inception-v3" element={<InceptionV3Page />} />
+        <Route path="home" element={<HomePage />} />
       </Route>
     </Routes>
   );
