@@ -13,13 +13,15 @@ const SortingChaosChallengePage = React.lazy(
 
 const InceptionV3Page = React.lazy(() => import("@/pages/inception-v3"));
 
-const HomePage = React.lazy(() => import("@/pages/home"));
+const NonlinearRegressionPage = React.lazy(
+  () => import("@/pages/nonlinear-regression")
+);
 
 export function RoutesProvider({ ...props }: RoutesProps) {
   return (
     <Routes {...props}>
       <Route element={<MainLayout />}>
-        <Route index element={<Navigate to="home" />} />
+        <Route index element={<Navigate to="nonlinear-regression" />} />
         <Route
           path="manipulating-images"
           element={<ManipulatingImagesPage />}
@@ -29,7 +31,10 @@ export function RoutesProvider({ ...props }: RoutesProps) {
           element={<SortingChaosChallengePage />}
         />
         <Route path="inception-v3" element={<InceptionV3Page />} />
-        <Route path="home" element={<HomePage />} />
+        <Route
+          path="nonlinear-regression"
+          element={<NonlinearRegressionPage />}
+        />
       </Route>
     </Routes>
   );
