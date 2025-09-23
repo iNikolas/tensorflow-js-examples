@@ -17,11 +17,15 @@ const NonlinearRegressionPage = React.lazy(
   () => import("@/pages/nonlinear-regression")
 );
 
+const TitanicSurvivalProbabilityPage = React.lazy(
+  () => import("@/pages/titanic-survival-probability")
+);
+
 export function RoutesProvider({ ...props }: RoutesProps) {
   return (
     <Routes {...props}>
       <Route element={<MainLayout />}>
-        <Route index element={<Navigate to="nonlinear-regression" />} />
+        <Route index element={<Navigate to="titanic-survival-probability" />} />
         <Route
           path="manipulating-images"
           element={<ManipulatingImagesPage />}
@@ -34,6 +38,10 @@ export function RoutesProvider({ ...props }: RoutesProps) {
         <Route
           path="nonlinear-regression"
           element={<NonlinearRegressionPage />}
+        />
+        <Route
+          path="titanic-survival-probability"
+          element={<TitanicSurvivalProbabilityPage />}
         />
       </Route>
     </Routes>
