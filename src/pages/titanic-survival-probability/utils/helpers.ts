@@ -3,7 +3,7 @@ import type { DataFrame, Series } from "danfojs";
 import { concat, LabelEncoder, readCSV } from "danfojs";
 import type { CsvInputOptionsBrowser } from "node_modules/danfojs/dist/danfojs-base/shared/types";
 
-import { batchSize, learningRate, trainingSplit } from "../config";
+import { trainingSplit } from "../config";
 import testCSV from "../assets/datasets/test.csv?url";
 import trainCSV from "../assets/datasets/train.csv?url";
 
@@ -85,13 +85,13 @@ async function prepareData() {
   };
 }
 
-export async function loadModel(args: tf.ModelFitArgs) {
+export async function loadModel({
+  learningRate,
+  ...args
+}: tf.ModelFitArgs & { learningRate: number }) {
   const { train, test } = await prepareData();
 
   await tf.ready();
-
-  const xs = tf.tensor1d(train.x);
-  const ys = tf.tensor1d(train.y);
 
   const model = tf.sequential();
 
@@ -112,17 +112,16 @@ export async function loadModel(args: tf.ModelFitArgs) {
 
   model.compile({
     optimizer: tf.train.adam(learningRate),
-    loss: tf.losses.sigmoidCrossEntropy,
+    loss: "binaryCrossentropy",
     metrics: ["accuracy"],
   });
 
-  const history = await model.fit(xs, ys, {
-    batchSize,
+  const history = await model.fit(train.x, train.y, {
     validationData: [test.x, test.y],
     ...args,
   });
 
-  tf.dispose([xs, ys]);
+  tf.dispose([train.x, train.y, test.x, test.y]);
 
   return { model, history };
 }

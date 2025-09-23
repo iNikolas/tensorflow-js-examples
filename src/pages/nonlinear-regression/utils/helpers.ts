@@ -2,15 +2,6 @@ import * as tf from "@tensorflow/tfjs";
 
 import { batchSize, dataSize, learningRate, stepSize } from "../config";
 
-export function splitIntoChunks(num: number, size = 2) {
-  const str = String(Math.floor(num));
-  const chunks = [];
-  for (let i = 0; i < str.length; i += size) {
-    chunks.push(Number(str.slice(i, i + size)));
-  }
-  return chunks;
-}
-
 export async function loadModel(args: tf.ModelFitArgs) {
   const jsxs = [];
   const jsys = [];

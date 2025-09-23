@@ -26,3 +26,12 @@ export function formatNumber(
 
   return `${withSeparators}.${decimalPart}`;
 }
+
+export function splitIntoChunks(num: number, size = 2) {
+  const str = String(Math.floor(num));
+  const chunks = [];
+  for (let i = 0; i < str.length; i += size) {
+    chunks.push(Number(str.slice(i, i + size)));
+  }
+  return chunks;
+}

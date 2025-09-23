@@ -1,14 +1,43 @@
 import React from "react";
+import { BiErrorAlt } from "react-icons/bi";
 
 import { cn } from "@/utils/helpers";
 import { MemoryUsage } from "@/components/containers/memory-usage";
+import { TrainingProgress } from "@/components/containers/training-progress";
+import { TrainingParameters } from "@/components/containers/trainng-parameters";
 
 import "./utils";
+import { batchSize, epochs, learningRate } from "./config";
+import { useModel } from "./utils";
 
 export default function Page() {
+  const { trainingProgress, loss, model, isTraining, train, error, accuracy } =
+    useModel();
+
   return (
-    <section className={cn("prose p-4")}>
-      <MemoryUsage />
+    <section className={cn("p-4 flex flex-col gap-4 items-center")}>
+      {!model &&
+        (isTraining ? (
+          <TrainingProgress
+            trainingProgress={trainingProgress}
+            loss={loss}
+            accuracy={accuracy}
+          />
+        ) : (
+          <>
+            {!!error && (
+              <div role="alert" className="alert alert-error">
+                <BiErrorAlt size={24} />
+                <span>{error}</span>
+              </div>
+            )}
+            <TrainingParameters
+              initialValues={{ epochs, learningRate, batchSize }}
+              onSubmit={(values) => train(values)}
+            />
+          </>
+        ))}
+      <MemoryUsage className="w-full" />
     </section>
   );
 }
