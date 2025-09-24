@@ -31,6 +31,7 @@ export function Profile({
           ),
         siblingsAmount: Yup.number()
           .required("Siblings amount is Required")
+          .integer('Input whole number for "Siblings amount" field')
           .min(
             limits?.min.siblingsAmount ?? 0,
             `Siblings amount must be at least ${
@@ -43,6 +44,7 @@ export function Profile({
           ),
         familyAmount: Yup.number()
           .required("Family amount is Required")
+          .integer('Input whole number for "Family amount" field')
           .min(
             limits?.min.familyAmount ?? 0,
             `Family amount must be at least ${limits?.min.familyAmount ?? 0}`
@@ -79,7 +81,13 @@ export function Profile({
                 <label htmlFor="sex" className="label">
                   Sex:
                 </label>
-                <Field as="select" className="select" id="sex" name="male">
+                <Field
+                  type="number"
+                  as="select"
+                  className="select w-full"
+                  id="sex"
+                  name="male"
+                >
                   <option value={1}>Male</option>
                   <option value={0}>Female</option>
                 </Field>
@@ -89,7 +97,12 @@ export function Profile({
                 <label htmlFor="age" className="label">
                   Age (years):
                 </label>
-                <Field type="number" className="input" id="age" name="age" />
+                <Field
+                  type="number"
+                  className="input w-full"
+                  id="age"
+                  name="age"
+                />
                 <ErrorMessage name="age" component="p" className="text-error" />
               </div>
 
@@ -99,7 +112,7 @@ export function Profile({
                 </label>
                 <Field
                   as="select"
-                  className="select"
+                  className="select w-full"
                   id="class"
                   name="passengerClass"
                 >
@@ -115,7 +128,7 @@ export function Profile({
                 </label>
                 <Field
                   type="number"
-                  className="input"
+                  className="input w-full"
                   id="siblings"
                   name="siblingsAmount"
                 />
@@ -132,7 +145,7 @@ export function Profile({
                 </label>
                 <Field
                   type="number"
-                  className="input"
+                  className="input w-full"
                   id="family"
                   name="familyAmount"
                 />
@@ -147,7 +160,12 @@ export function Profile({
                 <label htmlFor="fare" className="label">
                   Passenger fare (British Pounds):
                 </label>
-                <Field type="number" className="input" id="fare" name="fare" />
+                <Field
+                  type="number"
+                  className="input w-full"
+                  id="fare"
+                  name="fare"
+                />
                 <ErrorMessage
                   name="fare"
                   component="p"
@@ -162,7 +180,12 @@ export function Profile({
                 <label htmlFor="port" className="label">
                   Port of embarkation:
                 </label>
-                <Field as="select" className="select" id="port" name="port">
+                <Field
+                  as="select"
+                  className="select w-full"
+                  id="port"
+                  name="port"
+                >
                   {Object.entries(ports).map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}

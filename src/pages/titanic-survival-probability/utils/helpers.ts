@@ -7,7 +7,11 @@ import {
 } from "danfojs";
 import * as tf from "@tensorflow/tfjs";
 import type { DataFrame, Series } from "danfojs";
-import type { CsvInputOptionsBrowser } from "node_modules/danfojs/dist/danfojs-base/shared/types";
+import type {
+  ArrayType1D,
+  ArrayType2D,
+  CsvInputOptionsBrowser,
+} from "node_modules/danfojs/dist/danfojs-base/shared/types";
 
 import type { Limits, Profile } from "../types";
 import testCSV from "../assets/datasets/test.csv?url";
@@ -123,12 +127,16 @@ async function prepareData(): Promise<{
   embarkedClasses: {
     [key: string]: number;
   };
+  referenceData: { columns: string[]; data: ArrayType1D | ArrayType2D };
 }> {
   const allData = await combineData([trainCSV, testCSV]);
 
   const onlyFull = dropEmptyRows(
     removeFeatureColumns(allData, ["Name", "PassengerId", "Ticket", "Cabin"])
   ).resetIndex();
+
+  const fullData = onlyFull.values;
+  const fullDataColumns = onlyFull.columns;
 
   const { dataFrame: emberkedEncodedDataFrame, classes: embarkedClasses } =
     encodeStringColumns({
@@ -160,6 +168,10 @@ async function prepareData(): Promise<{
     columns: scaled.columns,
     sample,
     embarkedClasses,
+    referenceData: {
+      columns: fullDataColumns,
+      data: fullData,
+    },
   };
 }
 
@@ -167,7 +179,7 @@ export async function loadModel({
   learningRate,
   ...args
 }: tf.ModelFitArgs & { learningRate: number }) {
-  const { x, y, scaler, columns, sample, embarkedClasses } =
+  const { x, y, scaler, columns, sample, embarkedClasses, referenceData } =
     await prepareData();
 
   await tf.ready();
@@ -202,7 +214,15 @@ export async function loadModel({
 
   tf.dispose([x, y]);
 
-  return { model, history, scaler, columns, sample, embarkedClasses };
+  return {
+    model,
+    history,
+    scaler,
+    columns,
+    sample,
+    embarkedClasses,
+    referenceData,
+  };
 }
 
 function getColumnIndices(columns: string[]) {
@@ -213,6 +233,7 @@ function getColumnIndices(columns: string[]) {
   const ageBucketIndex = columns.indexOf(datasetColumns.ageBucket);
   const passengerClassIndex = columns.indexOf(datasetColumns.passengerClass);
   const portIndex = columns.indexOf(datasetColumns.port);
+  const femaleIndex = columns.indexOf(datasetColumns.female);
 
   return {
     siblingsAmountIndex,
@@ -222,6 +243,7 @@ function getColumnIndices(columns: string[]) {
     ageBucketIndex,
     passengerClassIndex,
     portIndex,
+    femaleIndex,
   };
 }
 
@@ -294,13 +316,25 @@ export function sampleToProfile({
   };
 }
 
-function profileToSample({
+function assertIsNumericArray(array: unknown): asserts array is number[] {
+  if (!Array.isArray(array) || array.some((item) => typeof item !== "number")) {
+    throw new Error("Expected numeric array");
+  }
+}
+
+export function profileToSample({
   profile,
   columns,
+  embarkedClasses,
 }: {
   profile: Profile;
   columns: string[];
+  embarkedClasses: { [key: string]: number };
 }): number[] {
+  const result = Array.from({ length: columns.length }).fill(1);
+
+  assertIsNumericArray(result);
+
   const {
     siblingsAmountIndex,
     familyAmountIndex,
@@ -309,15 +343,17 @@ function profileToSample({
     ageBucketIndex,
     passengerClassIndex,
     portIndex,
+    femaleIndex,
   } = getColumnIndices(columns);
 
-  return [
-    profile.male,
-    profile.age,
-    profile.passengerClass,
-    profile.siblingsAmount,
-    profile.familyAmount,
-    profile.fare,
-    embarkedClasses[profile.port],
-  ];
+  result[siblingsAmountIndex] = profile.siblingsAmount;
+  result[familyAmountIndex] = profile.familyAmount;
+  result[fareIndex] = profile.fare;
+  result[maleIndex] = Number(profile.male);
+  result[femaleIndex] = 1 - profile.male;
+  result[ageBucketIndex] = ageGroups.findIndex(({ max }) => profile.age <= max);
+  result[passengerClassIndex] = Number(profile.passengerClass);
+  result[portIndex] = embarkedClasses[profile.port];
+
+  return result;
 }

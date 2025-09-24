@@ -12,8 +12,6 @@ export function HistoryFeedback({
     return null;
   }
 
-  console.log(history);
-
   const accHistory = history.history?.acc;
   const valAccHistory = history.history?.val_acc;
   const lossHistory = history.history?.loss;

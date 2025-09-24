@@ -3,17 +3,18 @@ import { BiErrorAlt } from "react-icons/bi";
 
 import { cn } from "@/utils/helpers";
 import { MemoryUsage } from "@/components/containers/memory-usage";
+import { HistoryFeedback } from "@/components/containers/history-feedback";
 import { TrainingProgress } from "@/components/containers/training-progress";
 import { TrainingParameters } from "@/components/containers/trainng-parameters";
 
+import {
+  Profile as ProfileComponent,
+  ReferenceTable,
+  SurvivalFeedback,
+} from "./components";
 import type { Profile } from "./types";
 import { useModel, usePrediction } from "./utils";
 import { batchSize, epochs, learningRate } from "./config";
-import {
-  HistoryFeedback,
-  Profile as ProfileComponent,
-  SurvivalFeedback,
-} from "./components";
 
 export default function Page() {
   const [value, setValue] = React.useState<Profile | null>(null);
@@ -28,9 +29,19 @@ export default function Page() {
     limits,
     sample,
     history,
+    columns,
+    embarkedClasses,
+    scaler,
+    referenceData,
   } = useModel();
 
-  const { prediction, isPredicting } = usePrediction({ model, value });
+  const { prediction, isPredicting } = usePrediction({
+    model,
+    value,
+    columns,
+    embarkedClasses,
+    scaler,
+  });
 
   return (
     <section className={cn("p-4 flex flex-col gap-4 items-center")}>
@@ -60,7 +71,7 @@ export default function Page() {
           <ProfileComponent
             onSubmit={(data) => {
               if (isPredicting) return;
-              setValue(data);
+              setValue({ ...data });
             }}
             limits={limits}
             sample={sample}
@@ -71,6 +82,13 @@ export default function Page() {
               className="self-stretch"
               pending={isPredicting}
               probability={prediction}
+            />
+          </div>
+          <div className="prose">
+            <h6>Reference data from real Titanic passengers:</h6>
+            <ReferenceTable
+              data={referenceData}
+              embarkedClasses={embarkedClasses}
             />
           </div>
         </>
