@@ -2,9 +2,9 @@ import React from "react";
 import { useFormikContext } from "formik";
 
 import { cn } from "@/utils/helpers";
+import type { Profile } from "@/pages/titanic-survival-probability/types";
 
 import { imagesMap } from "./config";
-import type { Profile } from "../../types";
 
 export function Avatar({
   className,

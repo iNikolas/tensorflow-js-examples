@@ -293,3 +293,31 @@ export function sampleToProfile({
     port: port ?? "C",
   };
 }
+
+function profileToSample({
+  profile,
+  columns,
+}: {
+  profile: Profile;
+  columns: string[];
+}): number[] {
+  const {
+    siblingsAmountIndex,
+    familyAmountIndex,
+    fareIndex,
+    maleIndex,
+    ageBucketIndex,
+    passengerClassIndex,
+    portIndex,
+  } = getColumnIndices(columns);
+
+  return [
+    profile.male,
+    profile.age,
+    profile.passengerClass,
+    profile.siblingsAmount,
+    profile.familyAmount,
+    profile.fare,
+    embarkedClasses[profile.port],
+  ];
+}

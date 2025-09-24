@@ -3,8 +3,8 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 
 import { cn } from "@/utils/helpers";
 
-import type { ProfileProps } from "./types";
 import { ports } from "../../config";
+import type { ProfileProps } from "./types";
 import { AutoSubmitOnChange, Avatar } from "./components";
 
 export function Profile({

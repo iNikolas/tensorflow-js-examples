@@ -13,6 +13,7 @@ export function useModel() {
   const [loss, setLoss] = React.useState(Infinity);
   const [accuracy, setAccuracy] = React.useState(Infinity);
   const [sample, setSample] = React.useState<Profile | null>(null);
+  const [history, setHistory] = React.useState<tf.History | null>(null);
 
   const updatedTimestampRef = React.useRef(0);
 
@@ -38,6 +39,7 @@ export function useModel() {
     accuracy,
     limits,
     sample,
+    history,
     train: async (params: TrainingParams) => {
       if (model || isTraining) {
         return;
@@ -52,6 +54,7 @@ export function useModel() {
           columns,
           sample,
           embarkedClasses,
+          history,
         } = await loadModel({
           callbacks: {
             onEpochEnd: (epoch, log) => {
@@ -73,6 +76,7 @@ export function useModel() {
           ...params,
         });
 
+        setHistory(history);
         setSample(sampleToProfile({ sample, columns, embarkedClasses }));
         setLimits(calculateLimits({ scaler, columns }));
         setModel(data);
@@ -91,7 +95,7 @@ export function usePrediction({
   value,
   model,
 }: {
-  value?: number;
+  value: Profile | null;
   model?: tf.Sequential | null;
 }) {
   const [prediction, setPrediction] = React.useState(0);
