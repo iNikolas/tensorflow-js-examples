@@ -27,7 +27,7 @@ export function Countdown({
             {chunk}
           </span>
         ))}
-        {!!decimals && (
+        {!!decimals && !Number.isNaN(fractions) && (
           <>
             .
             {splitIntoChunks(fractions).map((chunk, index) => (

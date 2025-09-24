@@ -1,11 +1,69 @@
+import {
+  concat,
+  LabelEncoder,
+  readCSV,
+  getDummies,
+  MinMaxScaler,
+} from "danfojs";
 import * as tf from "@tensorflow/tfjs";
 import type { DataFrame, Series } from "danfojs";
-import { concat, LabelEncoder, readCSV } from "danfojs";
 import type { CsvInputOptionsBrowser } from "node_modules/danfojs/dist/danfojs-base/shared/types";
 
-import { trainingSplit } from "../config";
+import type { Limits, Profile } from "../types";
 import testCSV from "../assets/datasets/test.csv?url";
 import trainCSV from "../assets/datasets/train.csv?url";
+import { ageGroups, datasetColumns, validationSplit } from "../config";
+
+function ageToBucket(age: number) {
+  return ageGroups.findIndex(({ max }) => age <= max);
+}
+
+function normalizeDataset(dataFrame: DataFrame): {
+  scaled: DataFrame;
+  scaler: MinMaxScaler;
+} {
+  const scaler = new MinMaxScaler();
+
+  const scaled = scaler.fitTransform(dataFrame);
+
+  return { scaled, scaler };
+}
+
+function bucketColumn(
+  dataFrame: DataFrame,
+  {
+    column,
+    callback,
+    drop = true,
+  }: { column: string; callback: (x: number) => void; drop?: boolean }
+) {
+  const buckets = dataFrame[column].apply(callback);
+
+  dataFrame.addColumn(`${column}_bucket`, buckets, { inplace: true });
+
+  if (drop) {
+    dataFrame.drop({ columns: [column], inplace: true });
+  }
+
+  return dataFrame;
+}
+
+function oneHotEncoding(
+  dataFrame: DataFrame,
+  { column, columns }: { column: string; columns: [string, string] }
+): DataFrame {
+  const oneHotEncode = getDummies(dataFrame[column]);
+
+  dataFrame.drop({ columns: [column], inplace: true });
+
+  columns.forEach((columnName, index) => {
+    dataFrame.addColumn(columnName, oneHotEncode[oneHotEncode.columns[index]], {
+      inplace: true,
+    });
+  });
+
+  return dataFrame;
+}
 
 function assertIsDataFrame(
   data: DataFrame | Series
@@ -53,35 +111,55 @@ function encodeStringColumns({
 
   dataFrame[column] = encode.transform(dataFrame[column].values);
 
-  return dataFrame;
+  return { dataFrame, classes: encode.classes };
 }
 
-async function prepareData() {
+async function prepareData(): Promise<{
+  x: tf.Tensor2D;
+  y: tf.Tensor1D;
+  scaler: MinMaxScaler;
+  columns: string[];
+  sample: number[];
+  embarkedClasses: {
+    [key: string]: number;
+  };
+}> {
   const allData = await combineData([trainCSV, testCSV]);
 
   const onlyFull = dropEmptyRows(
     removeFeatureColumns(allData, ["Name", "PassengerId", "Ticket", "Cabin"])
   ).resetIndex();
 
-  const data = encodeStringColumns({
-    dataFrame: encodeStringColumns({ dataFrame: onlyFull, column: "Embarked" }),
-    column: "Sex",
-  });
+  const { dataFrame: emberkedEncodedDataFrame, classes: embarkedClasses } =
+    encodeStringColumns({
+      dataFrame: onlyFull,
+      column: "Embarked",
+    });
 
-  const trainDataAmount = Math.ceil(data.shape[0] * trainingSplit);
-  const train = await data.sample(trainDataAmount);
+  const data = bucketColumn(
+    oneHotEncoding(
+      encodeStringColumns({
+        dataFrame: emberkedEncodedDataFrame,
+        column: "Sex",
+      }).dataFrame,
+      { column: "Sex", columns: ["male", "female"] }
+    ),
+    { column: "Age", callback: ageToBucket }
+  );
 
-  const test = data.drop({ index: train.index });
+  const dataArray: number[][] = await data.tensor.array();
+
+  const { scaled, scaler } = normalizeDataset(data);
+
+  const sample = dataArray[Math.floor(Math.random() * dataArray.length)];
 
   return {
-    train: {
-      x: train.iloc({ columns: ["1:"] }).tensor,
-      y: train["Survived"].tensor,
-    },
-    test: {
-      x: test.iloc({ columns: ["1:"] }).tensor,
-      y: test["Survived"].tensor,
-    },
+    x: scaled.iloc({ columns: ["1:"] }).tensor,
+    y: scaled["Survived"].tensor,
+    scaler,
+    columns: scaled.columns,
+    sample,
+    embarkedClasses,
   };
 }
 
@@ -89,7 +167,8 @@ export async function loadModel({
   learningRate,
   ...args
 }: tf.ModelFitArgs & { learningRate: number }) {
-  const { train, test } = await prepareData();
+  const { x, y, scaler, columns, sample, embarkedClasses } =
+    await prepareData();
 
   await tf.ready();
 
@@ -97,7 +176,7 @@ export async function loadModel({
 
   model.add(
     tf.layers.dense({
-      inputShape: [train.x.shape[1]],
+      inputShape: [x.shape[1]],
       units: 120,
       activation: "relu",
       kernelInitializer: "heNormal",
@@ -116,12 +195,101 @@ export async function loadModel({
     metrics: ["accuracy"],
   });
 
-  const history = await model.fit(train.x, train.y, {
-    validationData: [test.x, test.y],
+  const history = await model.fit(x, y, {
+    validationSplit,
     ...args,
   });
 
-  tf.dispose([train.x, train.y, test.x, test.y]);
+  tf.dispose([x, y]);
 
-  return { model, history };
+  return { model, history, scaler, columns, sample, embarkedClasses };
+}
+
+function getColumnIndices(columns: string[]) {
+  const siblingsAmountIndex = columns.indexOf(datasetColumns.siblingsAmount);
+  const familyAmountIndex = columns.indexOf(datasetColumns.familyAmount);
+  const fareIndex = columns.indexOf(datasetColumns.fare);
+  const maleIndex = columns.indexOf(datasetColumns.male);
+  const ageBucketIndex = columns.indexOf(datasetColumns.ageBucket);
+  const passengerClassIndex = columns.indexOf(datasetColumns.passengerClass);
+  const portIndex = columns.indexOf(datasetColumns.port);
+
+  return {
+    siblingsAmountIndex,
+    familyAmountIndex,
+    fareIndex,
+    maleIndex,
+    ageBucketIndex,
+    passengerClassIndex,
+    portIndex,
+  };
+}
+
+export function calculateLimits({
+  scaler,
+  columns,
+}: {
+  scaler: MinMaxScaler;
+  columns: string[];
+}): Limits {
+  const maxLimits = scaler.inverseTransform(
+    Array.from({ length: columns.length }).fill(1)
+  );
+
+  const minLimits = scaler.inverseTransform(
+    Array.from({ length: columns.length }).fill(0)
+  );
+
+  const { siblingsAmountIndex, familyAmountIndex, fareIndex } =
+    getColumnIndices(columns);
+
+  return {
+    min: {
+      siblingsAmount: minLimits[siblingsAmountIndex],
+      familyAmount: minLimits[familyAmountIndex],
+      fare: minLimits[fareIndex],
+    },
+    max: {
+      siblingsAmount: maxLimits[siblingsAmountIndex],
+      familyAmount: maxLimits[familyAmountIndex],
+      fare: maxLimits[fareIndex],
+    },
+  };
+}
+
+export function sampleToProfile({
+  sample,
+  columns,
+  embarkedClasses,
+}: {
+  sample: number[];
+  columns: string[];
+  embarkedClasses: { [key: string]: number };
+}): Profile {
+  const {
+    siblingsAmountIndex,
+    familyAmountIndex,
+    fareIndex,
+    maleIndex,
+    ageBucketIndex,
+    passengerClassIndex,
+    portIndex,
+  } = getColumnIndices(columns);
+
+  const port = Object.entries(embarkedClasses).find(
+    ([, value]) => sample[portIndex] === value
+  )?.[0];
+
+  return {
+    male: sample[maleIndex] === 0 ? 0 : 1,
+    age:
+      ageGroups[sample[ageBucketIndex]].max < Infinity
+        ? Math.floor(ageGroups[sample[ageBucketIndex]].max * 0.7)
+        : 50,
+    passengerClass: sample[passengerClassIndex],
+    siblingsAmount: sample[siblingsAmountIndex],
+    familyAmount: sample[familyAmountIndex],
+    fare: sample[fareIndex],
+    port: port ?? "C",
+  };
 }

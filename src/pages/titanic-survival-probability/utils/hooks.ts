@@ -3,18 +3,21 @@ import * as tf from "@tensorflow/tfjs";
 
 import type { TrainingParams } from "@/entities/model";
 
-import { loadModel } from "./helpers";
 import { uiUpdateIntervalMs } from "../config";
+import type { Limits, Profile } from "../types";
+import { calculateLimits, loadModel, sampleToProfile } from "./helpers";
 
 export function useModel() {
   const [error, setError] = React.useState("");
   const [trainingProgress, setTrainingProgress] = React.useState(0);
   const [loss, setLoss] = React.useState(Infinity);
   const [accuracy, setAccuracy] = React.useState(Infinity);
+  const [sample, setSample] = React.useState<Profile | null>(null);
 
   const updatedTimestampRef = React.useRef(0);
 
   const [model, setModel] = React.useState<tf.Sequential | null>(null);
+  const [limits, setLimits] = React.useState<Limits | null>(null);
 
   const [isTraining, setIsTraining] = React.useState(false);
 
@@ -33,6 +36,8 @@ export function useModel() {
     isTraining,
     error,
     accuracy,
+    limits,
+    sample,
     train: async (params: TrainingParams) => {
       if (model || isTraining) {
         return;
@@ -41,7 +46,13 @@ export function useModel() {
       setIsTraining(true);
 
       try {
-        const { model: data } = await loadModel({
+        const {
+          model: data,
+          scaler,
+          columns,
+          sample,
+          embarkedClasses,
+        } = await loadModel({
           callbacks: {
             onEpochEnd: (epoch, log) => {
               setTrainingProgress((epoch / params.epochs) * 100);
@@ -62,6 +73,8 @@ export function useModel() {
           ...params,
         });
 
+        setSample(sampleToProfile({ sample, columns, embarkedClasses }));
+        setLimits(calculateLimits({ scaler, columns }));
         setModel(data);
       } catch (error) {
         setError(

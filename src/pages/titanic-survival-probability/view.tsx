@@ -1,4 +1,3 @@
-import React from "react";
 import { BiErrorAlt } from "react-icons/bi";
 
 import { cn } from "@/utils/helpers";
@@ -7,12 +6,22 @@ import { TrainingProgress } from "@/components/containers/training-progress";
 import { TrainingParameters } from "@/components/containers/trainng-parameters";
 
 import "./utils";
-import { batchSize, epochs, learningRate } from "./config";
 import { useModel } from "./utils";
+import { Profile } from "./components";
+import { batchSize, epochs, learningRate } from "./config";
 
 export default function Page() {
-  const { trainingProgress, loss, model, isTraining, train, error, accuracy } =
-    useModel();
+  const {
+    trainingProgress,
+    loss,
+    model,
+    isTraining,
+    train,
+    error,
+    accuracy,
+    limits,
+    sample,
+  } = useModel();
 
   return (
     <section className={cn("p-4 flex flex-col gap-4 items-center")}>
@@ -37,6 +46,13 @@ export default function Page() {
             />
           </>
         ))}
+      {!!model && (
+        <Profile
+          onSubmit={(data) => console.log(data)}
+          limits={limits}
+          sample={sample}
+        />
+      )}
       <MemoryUsage className="w-full" />
     </section>
   );
