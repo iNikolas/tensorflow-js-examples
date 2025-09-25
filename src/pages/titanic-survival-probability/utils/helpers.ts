@@ -204,7 +204,7 @@ export async function loadModel({
   model.add(tf.layers.dense({ units: 1, activation: "sigmoid" }));
 
   model.compile({
-    optimizer: tf.train.momentum(learningRate, 0.9, true),
+    optimizer: tf.train.sgd(learningRate),
     loss: "binaryCrossentropy",
     metrics: ["accuracy"],
   });
