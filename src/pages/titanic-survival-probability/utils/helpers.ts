@@ -197,8 +197,6 @@ export async function loadModel({
     })
   );
 
-  model.add(tf.layers.dropout({ rate: 0.2 }));
-
   model.add(tf.layers.dense({ units: 16, activation: "relu" }));
 
   model.add(tf.layers.dense({ units: 1, activation: "sigmoid" }));

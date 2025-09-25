@@ -93,7 +93,7 @@ export function useModel() {
                 updatedTimestampRef.current = currentTimestamp;
 
                 setLoss(log?.loss ?? Infinity);
-                setAccuracy(log?.val_acc ?? 0);
+                setAccuracy(log?.acc ?? 0);
               }
             },
           },
