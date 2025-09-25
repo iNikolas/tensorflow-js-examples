@@ -1,4 +1,4 @@
-export const validationSplit = 0.2;
+export const validationSplit = 0.1;
 
 export const learningRate = 0.01;
 

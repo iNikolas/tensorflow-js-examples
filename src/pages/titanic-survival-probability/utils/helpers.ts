@@ -178,7 +178,9 @@ async function prepareData(): Promise<{
 export async function loadModel({
   learningRate,
   ...args
-}: tf.ModelFitArgs & { learningRate: number }) {
+}: tf.ModelFitArgs & {
+  learningRate: number;
+}) {
   const { x, y, scaler, columns, sample, embarkedClasses, referenceData } =
     await prepareData();
 
@@ -189,26 +191,27 @@ export async function loadModel({
   model.add(
     tf.layers.dense({
       inputShape: [x.shape[1]],
-      units: 120,
+      units: 32,
       activation: "relu",
       kernelInitializer: "heNormal",
     })
   );
 
-  model.add(tf.layers.dense({ units: 64, activation: "relu" }));
+  model.add(tf.layers.dropout({ rate: 0.2 }));
 
-  model.add(tf.layers.dense({ units: 32, activation: "relu" }));
+  model.add(tf.layers.dense({ units: 16, activation: "relu" }));
 
   model.add(tf.layers.dense({ units: 1, activation: "sigmoid" }));
 
   model.compile({
-    optimizer: tf.train.adam(learningRate),
+    optimizer: tf.train.sgd(learningRate),
     loss: "binaryCrossentropy",
     metrics: ["accuracy"],
   });
 
   const history = await model.fit(x, y, {
     validationSplit,
+    shuffle: true,
     ...args,
   });
 
