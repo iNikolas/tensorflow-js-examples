@@ -204,7 +204,7 @@ export async function loadModel({
   model.add(tf.layers.dense({ units: 1, activation: "sigmoid" }));
 
   model.compile({
-    optimizer: tf.train.sgd(learningRate),
+    optimizer: tf.train.momentum(learningRate, 0.9, true),
     loss: "binaryCrossentropy",
     metrics: ["accuracy"],
   });
@@ -212,14 +212,7 @@ export async function loadModel({
   const history = await model.fit(x, y, {
     validationSplit,
     shuffle: true,
-    callbacks: [
-      tf.callbacks.earlyStopping({
-        monitor: "loss",
-        patience: 10,
-        minDelta: 0.001,
-      }),
-      ...(callbacks ? [new tf.CustomCallback(callbacks)] : []),
-    ],
+    callbacks,
     ...args,
   });
 
@@ -342,7 +335,7 @@ export function profileToSample({
   columns: string[];
   embarkedClasses: { [key: string]: number };
 }): number[] {
-  const result = Array.from({ length: columns.length }).fill(1);
+  const result = Array.from({ length: columns.length }).fill(0);
 
   assertIsNumericArray(result);
 

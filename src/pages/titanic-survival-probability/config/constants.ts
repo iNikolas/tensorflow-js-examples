@@ -1,8 +1,8 @@
 export const validationSplit = 0;
 
-export const learningRate = 0.01;
+export const learningRate = 0.005;
 
-export const batchSize = 32;
+export const batchSize = 16;
 
 export const epochs = 100;
 
