@@ -177,9 +177,11 @@ async function prepareData(): Promise<{
 
 export async function loadModel({
   learningRate,
+  callbacks,
   ...args
-}: tf.ModelFitArgs & {
+}: Omit<tf.ModelFitArgs, "callbacks"> & {
   learningRate: number;
+  callbacks?: tf.CustomCallbackArgs;
 }) {
   const { x, y, scaler, columns, sample, embarkedClasses, referenceData } =
     await prepareData();
@@ -210,6 +212,14 @@ export async function loadModel({
   const history = await model.fit(x, y, {
     validationSplit,
     shuffle: true,
+    callbacks: [
+      tf.callbacks.earlyStopping({
+        monitor: "loss",
+        patience: 10,
+        minDelta: 0.001,
+      }),
+      ...(callbacks ? [new tf.CustomCallback(callbacks)] : []),
+    ],
     ...args,
   });
 

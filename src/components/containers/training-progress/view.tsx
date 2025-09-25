@@ -19,9 +19,14 @@ export function TrainingProgress({
         max="100"
       />
       {loss !== Infinity && (
-        <Countdown decimals={4} value={loss}>
-          Loss:
-        </Countdown>
+        <div>
+          <Countdown className="mb-0" decimals={4} value={loss}>
+            Loss:
+          </Countdown>
+          <p className="text-sm opacity-50 mt-0">
+            Training will stop earlier if loss does not decrease
+          </p>
+        </div>
       )}
       {accuracy != null && accuracy !== Infinity && (
         <Countdown decimals={1} value={accuracy * 100}>
