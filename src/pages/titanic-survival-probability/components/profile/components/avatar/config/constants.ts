@@ -1,4 +1,4 @@
-import type { Profile } from "../../../types";
+import type { Profile } from "@/pages/titanic-survival-probability/types";
 
 import nobleManImg from "../assets/noble-man.avif";
 import maleWorkerImg from "../assets/male-worker.webp";
