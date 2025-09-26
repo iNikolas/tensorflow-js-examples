@@ -1,12 +1,20 @@
+import type { DenseLayerArgs } from "@tensorflow/tfjs-layers/dist/layers/core";
+
 export const validationSplit = 0;
 
-export const learningRate = 0.1;
+export const learningRate = 0.01;
 
 export const batchSize = 32;
 
 export const epochs = 100;
 
 export const uiUpdateIntervalMs = 2000;
+
+export const layers: DenseLayerArgs[] = [
+  { units: 16, activation: "relu", kernelInitializer: "heNormal" },
+  { units: 8, activation: "sigmoid" },
+  { units: 1, activation: "sigmoid" },
+] as const;
 
 export const ageGroups = [
   { max: 10, label: "Children" },

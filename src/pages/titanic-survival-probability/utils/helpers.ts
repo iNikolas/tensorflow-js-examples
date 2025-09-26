@@ -16,7 +16,7 @@ import type {
 import type { Limits, Profile } from "../types";
 import testCSV from "../assets/datasets/test.csv?url";
 import trainCSV from "../assets/datasets/train.csv?url";
-import { ageGroups, datasetColumns, validationSplit } from "../config";
+import { ageGroups, datasetColumns, layers, validationSplit } from "../config";
 
 function ageToBucket(age: number) {
   return ageGroups.findIndex(({ max }) => age <= max);
@@ -190,21 +190,17 @@ export async function loadModel({
 
   const model = tf.sequential();
 
-  model.add(
-    tf.layers.dense({
-      inputShape: [x.shape[1]],
-      units: 32,
-      activation: "relu",
-      kernelInitializer: "heNormal",
-    })
+  layers.forEach((layer, index) =>
+    model.add(
+      tf.layers.dense({
+        ...layer,
+        ...(index === 0 && { inputShape: [x.shape[1]] }),
+      })
+    )
   );
 
-  model.add(tf.layers.dense({ units: 16, activation: "relu" }));
-
-  model.add(tf.layers.dense({ units: 1, activation: "sigmoid" }));
-
   model.compile({
-    optimizer: tf.train.sgd(learningRate),
+    optimizer: tf.train.momentum(learningRate, 0.9, true),
     loss: "binaryCrossentropy",
     metrics: ["accuracy"],
   });
