@@ -21,6 +21,8 @@ const TitanicSurvivalProbabilityPage = React.lazy(
   () => import("@/pages/titanic-survival-probability")
 );
 
+const SortingHatPage = React.lazy(() => import("@/pages/sorting-hat"));
+
 export function RoutesProvider({ ...props }: RoutesProps) {
   return (
     <Routes {...props}>
@@ -43,6 +45,7 @@ export function RoutesProvider({ ...props }: RoutesProps) {
           path="titanic-survival-probability"
           element={<TitanicSurvivalProbabilityPage />}
         />
+        <Route path="sorting-hat" element={<SortingHatPage />} />
       </Route>
     </Routes>
   );
